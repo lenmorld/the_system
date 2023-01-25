@@ -1,0 +1,25 @@
+{
+  "name": "graphql-server-experiments",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "cross-env DEBUG=knex:query nodemon src/index.js",
+    "dataloader": "cross-env DEBUG=knex:query nodemon src/dataloader-example.js",
+    "conditional-join": "cross-env DEBUG=knex:query nodemon src/conditional-join-example.js",
+    "join": "cross-env DEBUG=knex:query nodemon src/join-example.js"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.3.0",
+    "@faker-js/faker": "^7.6.0",
+    "dataloader": "^2.1.0",
+    "graphql": "^16.6.0",
+    "graphql-tag": "^2.12.6",
+    "knex": "^2.4.0",
+    "pg": "^8.8.0",
+    "sqlite3": "^5.1.4"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
