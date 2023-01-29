@@ -10,6 +10,7 @@
     "join": "cross-env DEBUG=knex:query nodemon src/join-example.js"
   },
   "dependencies": {
+    "@apollo/datasource-rest": "^5.0.1",
     "@apollo/server": "^4.3.0",
     "@faker-js/faker": "^7.6.0",
     "dataloader": "^2.1.0",
