@@ -4,6 +4,8 @@ const { startStandaloneServer } = require('@apollo/server/standalone');
 const gql = require('graphql-tag')
 const { faker } = require('@faker-js/faker');
 
+const MoviesAPI = require("./movies-api")
+
 const knex = require('knex')({
     client: 'pg',
     connection: {
@@ -25,9 +27,13 @@ const typeDefs = gql`
     title: String
     author: Author!
   }
+  type Movie {
+    Title: String
+  }
   type Query {
     books: [Book]
-  }    
+    movie(id: ID!): Movie
+  }
 `
 
 const resolvers = {
