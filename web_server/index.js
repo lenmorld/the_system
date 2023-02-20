@@ -1,13 +1,14 @@
 const path = require('path')
-const fetch = require('node-fetch')
-
+// const fetch = require('node-fetch')
 const axios = require('axios')
 
 const { request, gql } = require('graphql-request')
 
 const express = require('express')
-const server = express()
 
+const { fire } = require('./circuit-breaker')
+
+const server = express()
 
 const port = 4000
 
@@ -155,6 +156,17 @@ server.get('/stuff', async (req, res) => {
 // const response = raw.json()
 
 // send request to /api2
+
+server.get('/page', async (req, res) => {
+    try {
+        const data = await fire()
+        console.log("success! results: ",  data)
+        res.json(data)
+    } catch (e) {
+        console.error("client: ", e)
+        res.send("error: " + e)
+    }
+})
 
 server.listen(port, () => {
     console.log("web server listening at 4000")
