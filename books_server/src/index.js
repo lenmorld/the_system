@@ -48,13 +48,24 @@ const resolvers = {
         }
     },
     Query: {
-        books: async () => {
+        // books: async () => {
+        books: async (parent, args, contextValue, info) => {
+            console.log({ parent, args, contextValue, info })
+
             const books = await knex("books")
                 .select()
                 .limit(10)
 
             return books;
-        }
+        },
+        movie: async (_, { id }, { dataSources }) => {
+            console.log({
+                id
+            })
+
+            // return dataSources.moviesAPI.getMovie('tt0371746');
+            return dataSources.moviesAPI.getMovie(id);
+        },
     }
 }
 
@@ -92,10 +103,24 @@ knex('users')
         }
     })
     .then(async () => {
-        const server = new ApolloServer({ typeDefs, resolvers})
+        const server = new ApolloServer({ 
+            typeDefs, 
+            resolvers, 
+        })
 
         const { url } = await startStandaloneServer(server, {
-            listen: { port: 4001 }
+            listen: { port: 4001 },
+            context: async () => {
+                const { cache } = server
+
+                return {
+                    // we create new instances of data source with each request,
+                    // passing in our server's cache
+                    dataSources: {
+                        moviesAPI: new MoviesAPI({ cache })
+                    }
+                }
+            }
         })
 
         // server.listen().then(({ url }) => {
