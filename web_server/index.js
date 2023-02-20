@@ -1,5 +1,7 @@
 const path = require('path')
 // const fetch = require('node-fetch')
+const axios = require('axios')
+
 const { request, gql } = require('graphql-request')
 
 const express = require('express')
@@ -96,6 +98,64 @@ server.get('/', async (req, res) => {
 server.get('/results', async (req, res) => {
     res.json(await fetchData())
 })
+
+const delay = (delayMs = 1000) => {
+    return new Promise((resolve) => {
+        setTimeout(resolve, delayMs)
+    })
+}
+
+const retryRequest = async (url, maxRetries = 5, backOffSeconds = 2000) => {
+    let retries = 0
+
+    while (retries < maxRetries) {
+        retries++
+        try {
+            console.log("try " + retries + " out of " + maxRetries)
+            const raw = await axios.get(url)
+            // return res.json(raw.data)
+            console.log("success!")
+            return raw.data
+            // break
+        } catch (e) {
+            // res.status(e.response.status).send(e.message)
+            // instead of failing right away, just log for now
+            console.error("server error - " + e.response.status + " : " + e.message)
+        }
+
+        await delay(backOffSeconds)
+    }
+
+    const failureMessage = "Max retries reached. Service unresponsive"
+
+    console.error(failureMessage)
+    throw new Error(failureMessage)
+    
+    // return res.status(500).send("Max retries reached. Service unresponsive")
+}
+
+server.get('/stuff', async (req, res) => {
+    const maxRetries = 10
+    const backOffSeconds = 5000
+    
+    try {
+        const resp = await retryRequest('http://localhost:4001/api2', maxRetries, backOffSeconds)
+        res.json(resp)
+    } catch (e) {
+        // res.status(e.response.status).send(e.message)
+        res.status(500).send(e.message)
+    }
+})
+
+// try {
+//     const raw = await axios.get('http://localhost:4001/api2')
+//     res.json(raw.data)
+// } catch (e) {
+//     res.status(e.response.status).send(e.message)
+// }
+// const response = raw.json()
+
+// send request to /api2
 
 server.get('/page', async (req, res) => {
     try {
