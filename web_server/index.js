@@ -6,7 +6,10 @@ const { request, gql } = require('graphql-request')
 
 const express = require('express')
 
-const { fire } = require('./circuit-breaker')
+const { retryRequest } = require("./resiliency/retry")
+// const { CircuitBreaker } = require("./resiliency/circuit-breaker")
+// const { fire } = require('../resiliency/circuit-breaker-opposum')
+const { CircuitBreaker, fire, breakers } = require('./resiliency/circuit-breaker-opposum')
 
 const server = express()
 
@@ -17,7 +20,12 @@ const redis = new Redis(); // default 6379
 
 const CACHE_KEY_BOOKS = "books"
 
+server.get('/', async (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'))
+})
 
+// ========================
+// CACHE demo
 const fetchData = async () => {
     // const body = {a: 1};
 
@@ -90,75 +98,44 @@ const fetchData = async () => {
     return res
 }
 
-server.get('/', async (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'))
-})
-
-
 server.get('/results', async (req, res) => {
     res.json(await fetchData())
 })
+// === end of CACHE demo ===
+// =========================
 
-const delay = (delayMs = 1000) => {
-    return new Promise((resolve) => {
-        setTimeout(resolve, delayMs)
-    })
-}
-
-const retryRequest = async (url, maxRetries = 5, backOffSeconds = 2000) => {
-    let retries = 0
-
-    while (retries < maxRetries) {
-        retries++
-        try {
-            console.log("try " + retries + " out of " + maxRetries)
-            const raw = await axios.get(url)
-            // return res.json(raw.data)
-            console.log("success!")
-            return raw.data
-            // break
-        } catch (e) {
-            // res.status(e.response.status).send(e.message)
-            // instead of failing right away, just log for now
-            console.error("server error - " + e.response.status + " : " + e.message)
-        }
-
-        await delay(backOffSeconds)
-    }
-
-    const failureMessage = "Max retries reached. Service unresponsive"
-
-    console.error(failureMessage)
-    throw new Error(failureMessage)
-    
-    // return res.status(500).send("Max retries reached. Service unresponsive")
-}
-
+// =========================
+// RETRY demo
 server.get('/stuff', async (req, res) => {
     const maxRetries = 10
-    const backOffSeconds = 5000
+    const initialBackOffSeconds = 2000
     
     try {
-        const resp = await retryRequest('http://localhost:4001/api2', maxRetries, backOffSeconds)
+        const resp = await retryRequest({
+            url: 'http://localhost:4001/api2',
+            method: 'GET'
+        }, maxRetries, initialBackOffSeconds)
         res.json(resp)
     } catch (e) {
         // res.status(e.response.status).send(e.message)
         res.status(500).send(e.message)
     }
 })
+// ==== end of RETRY demo ==
+// =========================
 
-// try {
-//     const raw = await axios.get('http://localhost:4001/api2')
-//     res.json(raw.data)
-// } catch (e) {
-//     res.status(e.response.status).send(e.message)
-// }
-// const response = raw.json()
+// =========================
+// CIRCUIT BREAKER demo ====
 
-// send request to /api2
+server.get('/page2', async (req, res) => {
+    const request = {
+        url: 'http://localhost:4003/api',
+        method: 'GET'
+    }
 
-server.get('/page', async (req, res) => {
     try {
+        // register request
+        const { fire } = CircuitBreaker(request)
         const data = await fire()
         console.log("success! results: ",  data)
         res.json(data)
@@ -167,6 +144,8 @@ server.get('/page', async (req, res) => {
         res.send("error: " + e)
     }
 })
+// === end of CB demo ======
+// =========================
 
 server.listen(port, () => {
     console.log("web server listening at 4000")

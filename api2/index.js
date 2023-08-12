@@ -14,11 +14,14 @@ const port = 4001
 
 let callTimes = 0
 
+// RETRY demo
 server.get('/api2', async (req, res) => {
+    const TRANSIENT_FAILURE = 5
+
     callTimes++
 
-    // simulate a service that sometimes succeeds and sometimes fails
-    if (callTimes < 5) {
+    // simulate a service with a transient failure
+    if (callTimes < TRANSIENT_FAILURE) {
         res.status(500).send('server error')
     } else {
         res.json({ name: "Lenny" })
@@ -26,5 +29,5 @@ server.get('/api2', async (req, res) => {
 })
 
 server.listen(port, () => {
-    console.log("web server listening at 4001")
+    console.log("api2 listening at 4001")
 })
