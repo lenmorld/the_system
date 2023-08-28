@@ -52,3 +52,31 @@ web-server
 - run /page2 request to test
 
 
+## Kafka demo
+
+catalog API (books_catalog)
+- / renders book management UI for CRUD
+- /api/books is called by web-server and returns books data
+- Kafka producer: see produceEvent
+  - produces an event to `books` topic for book CRUD events, e.g. book deleted, added
+
+web-server
+- /books calls book catalog API and renders a UI of list of books
+- Kafka consumer: see consumeEvents
+  - consumes `books` topic (one time setup)
+
+### To demo
+
+Confluent setup
+- config is in `getting-started.properties` for both producer and consumer
+- 
+
+run web server
+- see "KAFKA demo" and kafka/ folder
+- call /books -> it should cache the response from Catalog
+
+run books catalog API
+- load /
+- Do a CRUD operation, i.e. Delete a book
+-> this should Produce a Delete event, 
+causing the web server cache to invalidate
