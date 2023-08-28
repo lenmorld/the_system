@@ -7,9 +7,8 @@ const { request, gql } = require('graphql-request')
 const express = require('express')
 
 const { retryRequest } = require("./resiliency/retry")
-// const { CircuitBreaker } = require("./resiliency/circuit-breaker")
-// const { fire } = require('../resiliency/circuit-breaker-opposum')
-const { CircuitBreaker, fire, breakers } = require('./resiliency/circuit-breaker-opposum')
+const { CircuitBreaker } = require('./resiliency/circuit-breaker-opposum')
+const { CircuitBreaker2, test } = require("./resiliency/circuit-breaker-home-baked")
 
 const server = express()
 
@@ -127,14 +126,14 @@ server.get('/stuff', async (req, res) => {
 // =========================
 // CIRCUIT BREAKER demo ====
 
-server.get('/page2', async (req, res) => {
+server.get('/page', async (req, res) => {
     const request = {
         url: 'http://localhost:4003/api',
         method: 'GET'
     }
 
     try {
-        // register request
+        // register request to Opposum CB
         const { fire } = CircuitBreaker(request)
         const data = await fire()
         console.log("success! results: ",  data)
@@ -144,6 +143,26 @@ server.get('/page2', async (req, res) => {
         res.send("error: " + e)
     }
 })
+
+// home-baked CB
+server.get('/page2', async (req, res) => {
+    // const request = {
+    //     url: 'http://localhost:4003/api',
+    //     method: 'GET'
+    // }
+
+    try {
+        // const { fire } = CircuitBreaker2(request)
+        // const data = await fire()
+        // console.log("success! results: ",  data)
+        const data = await test()
+        res.json({ test: data})
+    } catch (e) {
+        console.error("client: ", e)
+        res.send("error: " + e)
+    }
+})
+
 // === end of CB demo ======
 // =========================
 
