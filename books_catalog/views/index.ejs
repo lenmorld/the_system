@@ -1,0 +1,36 @@
+<%- include('./partials/_head'); %>
+
+<script src="//unpkg.com/react@16/umd/react.development.js"></script>
+<script src="//unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+<!-- for imported scripts -->
+<script src="//unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<body>
+    <nav>
+        <h1>Books catalog management</h1>
+	</nav>
+	<hr />
+	<main>
+        <div id="app"></div>
+        <!-- <button>Add</button>
+
+        <% if (locals.books)  { %>
+            <ul>
+                <% for (var i = 0; i < books.length ; i++) { %>
+                    <li> 
+                        <%= books[i].title %> by <%= books[i].author %> 
+                        <button>Delete</button>
+                    </li>
+                <% } %>
+            </ul>
+        <% } %> -->
+
+        
+	</main>
+    <script type="text/babel">
+        window.dataStore = {
+            books: <%- locals.books %>
+        }
+    </script>
+    <script type="text/babel" src="./main.js"></script>
+</body>
