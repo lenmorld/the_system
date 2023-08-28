@@ -54,6 +54,8 @@ web-server
 
 ## Kafka demo
 
+Notion: https://lennythedev.notion.site/Kafka-233e0b956a88411aa2b527b0157929fb?pvs=4
+
 catalog API (books_catalog)
 - / renders book management UI for CRUD
 - /api/books is called by web-server and returns books data
@@ -68,8 +70,8 @@ web-server
 ### To demo
 
 Confluent setup
+- see KAFKA_CONFLUENT.md for credentials, cli commands, etc
 - config is in `getting-started.properties` for both producer and consumer
-- 
 
 run web server
 - see "KAFKA demo" and kafka/ folder
