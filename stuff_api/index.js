@@ -17,10 +17,10 @@ server.get('/api', async (req, res) => {
 server.get('/api2', async (req, res) => {
     // really long timeout
     // setTimeout(() => {
-    //     res.json({ name: "lenny" })
+    res.json({ name: "lenny" })
     // }, 2000)
 
-    res.status(500).end("fail")
+    // res.status(500).end("STUFF API: server error")
 })
 
 server.listen(port, () => {
