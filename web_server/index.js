@@ -10,6 +10,10 @@ const { retryRequest } = require("./resiliency/retry")
 const { CircuitBreaker } = require('./resiliency/circuit-breaker-opposum')
 const { CircuitBreaker2, test } = require("./resiliency/circuit-breaker-home-baked")
 
+// Kafka
+const { consumeEvents } = require('./kafka/consumer')
+const { TOPIC_BOOKS } = require('./kafka/topics')
+
 const server = express()
 
 const port = 4000
@@ -18,6 +22,9 @@ const Redis = require("ioredis");
 const redis = new Redis(); // default 6379
 
 const CACHE_KEY_BOOKS = "books"
+const CACHE_KEY_BOOKS_CATALOG = "booksCatalog"
+
+server.set('view engine', 'ejs');
 
 server.get('/', async (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'))
@@ -88,7 +95,7 @@ const fetchData = async () => {
                 }
             }
         `
-        res = await request('http://localhost:4001', query)
+        res = await request('http://localhost:4004', query)
 
         // save to cache
         redis.set(CACHE_KEY_BOOKS, JSON.stringify(res))
@@ -100,8 +107,68 @@ const fetchData = async () => {
 server.get('/results', async (req, res) => {
     res.json(await fetchData())
 })
+
 // === end of CACHE demo ===
 // =========================
+
+// === KAFKA demo ====
+// KAFKA, consume only once
+// TODO: redis - clear cache
+// FIXME: show in UI that there's an event
+// websockets? push notification?
+
+consumeEvents(TOPIC_BOOKS, (err, message) => {
+    if (err) {
+        console.error("consume event error: ", err)
+        res.status(500).json({
+            error: "consume event error: ", err
+        })
+    }
+
+    const key = Buffer.from(message.key).toString()
+    const value = Buffer.from(message.value).toString()
+
+    // FIXME: put in a util, organize constants
+    // invalidate cache of books catalog
+    if (value.includes('Deleted')) {
+        console.log("invalidate cache - books catalog")
+        redis.del(CACHE_KEY_BOOKS_CATALOG)
+    }
+
+    console.log("event consumed: ", key, value)
+})
+
+server.get('/books', async (req, res) => {
+    // cache the response
+    // then invalidate when event is received that it's updated
+
+    const booksCatalogCachedData = await redis.get(CACHE_KEY_BOOKS_CATALOG)
+
+    let booksResponse = []
+
+    if (booksCatalogCachedData) {
+        console.log("✅ cache hit")
+        booksResponse = JSON.parse(booksCatalogCachedData)
+    } else {
+        console.log("❌ cache miss")
+        
+        const response = await axios('http://localhost:4004/api/books')
+        
+        const books = response.data.books
+        
+        // save to cache
+        console.log("💾 save to cache")
+        redis.set(CACHE_KEY_BOOKS_CATALOG, JSON.stringify(books))
+
+        booksResponse = books
+    }
+
+    res.render('books', {
+        books: booksResponse,
+    })
+})
+
+// === end of KAFKA demo
 
 // =========================
 // RETRY demo

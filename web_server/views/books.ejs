@@ -1,0 +1,18 @@
+<%- include('./partials/_head'); %>
+
+<body>
+	<nav>
+        <h1>Books UI</h1>
+	</nav>
+	<hr />
+	<main>
+        <% if (locals.books)  { %>
+            <ul>
+                <% for (var i = 0; i < books.length ; i++) { %>
+                    <li> <%= books[i].title %> by <%= books[i].author  %> </li>
+                <% } %>
+            </ul>
+        <% } %>
+
+	</main>
+</body>
