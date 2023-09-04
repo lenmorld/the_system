@@ -111,6 +111,7 @@ knex('users')
         const { url } = await startStandaloneServer(server, {
             listen: { port: 4009 },
             context: async () => {
+                // use default InMemoryLRUCache
                 const { cache } = server
 
                 return {
