@@ -1,5 +1,8 @@
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
+const DataLoader = require('dataloader');
+
+const USE_DATA_LOADER_TO_RESOLVE_N_PLUS_1 = true
 
 const gql = require('graphql-tag')
 const { faker } = require('@faker-js/faker');
@@ -38,7 +41,11 @@ const typeDefs = gql`
 
 const resolvers = {
     Book: {
-        author: async parent => {
+        author: async (parent, _, ctx) => {
+            if (USE_DATA_LOADER_TO_RESOLVE_N_PLUS_1) {
+                return ctx.authorLoader.load(parent.authorId)
+            }
+
             const author = await knex("users")
                 .select()
                 .where("id", parent.authorId)
@@ -50,7 +57,7 @@ const resolvers = {
     Query: {
         // books: async () => {
         books: async (parent, args, contextValue, info) => {
-            console.log({ parent, args, contextValue, info })
+            // console.log({ parent, args, contextValue, info })
 
             const books = await knex("books")
                 .select()
@@ -109,8 +116,9 @@ knex('users')
         })
 
         const { url } = await startStandaloneServer(server, {
-            listen: { port: 4001 },
+            listen: { port: 4009 },
             context: async () => {
+                // use default InMemoryLRUCache
                 const { cache } = server
 
                 return {
@@ -118,7 +126,25 @@ knex('users')
                     // passing in our server's cache
                     dataSources: {
                         moviesAPI: new MoviesAPI({ cache })
-                    }
+                    },
+                    // --- use DataLoader to resolve n+1 problem ---
+                    // not used if !USE_DATA_LOADER_TO_RESOLVE_N_PLUS_1
+                    authorLoader: new DataLoader(async keys => {
+                        // keys are all the Book authorId
+                        // console.log("DataLoader keys: ", keys)
+        
+                        const authors = await knex('users')
+                            .select()
+                            .whereIn("id", keys)
+        
+                        const authorMap = {}
+                        authors.forEach(author => {
+                            authorMap[author.id] = author
+                        })
+        
+                        return keys.map(key => authorMap[key])
+                    })
+                    // ---------------------------------------------
                 }
             }
         })
