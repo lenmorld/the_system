@@ -109,7 +109,7 @@ knex('users')
         })
 
         const { url } = await startStandaloneServer(server, {
-            listen: { port: 4001 },
+            listen: { port: 4009 },
             context: async () => {
                 const { cache } = server
 
